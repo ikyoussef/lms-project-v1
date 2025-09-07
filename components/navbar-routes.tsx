@@ -22,12 +22,12 @@ export const NavbarRoutes = () => {
     // On détermine la page actuelle pour afficher les bons boutons
     const isTeacherPage = pathname?.startsWith("/teacher");
     const isCoursePage = pathname?.includes("/courses");
-    const isSearchPage = pathname === "/search";
+    const isHomePage = pathname === "/";
 
     return (
         <>
             {/* On n'affiche la barre de recherche que sur la page de recherche */}
-            {isSearchPage && (
+            {isHomePage && (
                 <div className="hidden md:block">
                     <SearchInput />
                 </div>

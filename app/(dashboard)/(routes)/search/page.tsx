@@ -1,121 +1,65 @@
-// import { db } from "@/lib/db";
-// import { Categories } from "./_components/categories";
-// import { SearchInput } from "@/components/search-input";
-// import { getCourses } from "@/actions/get-courses";
-// import { auth} from "@clerk/nextjs/server";
-// import { redirect } from "next/navigation";
-// import { CoursesList } from "@/components/courses-list";
+// Fichier : app/(dashboard)/(routes)/(root)/page.tsx
 
-// interface SerachPageProps{
-//   searchParams : {
-//     title : string;
-//     categoryId : string;
-//   }
-// }
-
-// const SearchPage = async ( { searchParams } : SerachPageProps ) => {
-
-//   const { userId } = await auth();
-
-//     if(!userId) {
-//         redirect('/');
-//     }
-//   const categories = await db.category.findMany({
-//     orderBy : {
-//       name : "asc"
-//     }
-//   })
-
-  
-
-
-//   const courses = await getCourses({
-//     userId,
-//     ...searchParams
-
-//   });
-//   return (
-//     <>
-//       <div className="px-6 pt-6 md:hidden md:mb-0 block">
-//         <SearchInput />
-//       </div>
-//       <div className="p-6 space-y-4">
-//         <Categories 
-//           items={categories}
-        
-//         />
-
-//         <CoursesList
-//             items={courses}
-//         />
-//       </div>
-//     </>
-//   )
-// }
-// export default  SearchPage;
-
-
-
-
-
-
-// Fichier : app/(dashboard)/(routes)/search/page.tsx
-
-// Fichier : app/(dashboard)/(routes)/search/page.tsx
-
-// ===== AJOUTEZ CETTE LIGNE EN HAUT DU FICHIER =====
-export const dynamic = 'force-dynamic';
-// =================================================
-
-import { db } from "@/lib/db";
-import { Categories } from "./_components/categories";
-import { SearchInput } from "@/components/search-input";
-import { getCourses } from "@/actions/get-courses";
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
+import { getDashboardCourses } from "@/actions/get-dashboard-courses";
 import { CoursesList } from "@/components/courses-list";
+import { auth } from "@clerk/nextjs/server";
+import { CheckCircle, Clock } from "lucide-react";
+import { redirect } from "next/navigation";
+import { InfoCard } from "../(root)/_components/info-card";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
-interface SearchPageProps {
-  searchParams: {
-    title: string;
-    categoryId: string;
-  }
-}
-
-const SearchPage = async ({ searchParams }: SearchPageProps) => {
-    // ... le reste de votre code est parfait et n'a pas besoin de changer ...
+export default async function RootPage() {
+    // 1. On récupère le userId. Il peut être `null` si le visiteur n'est pas connecté.
     const { userId } = await auth();
 
+    // 2. Si l'utilisateur N'EST PAS connecté, on affiche la page de bienvenue publique.
     if (!userId) {
-        return redirect("/");
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[calc(100vh-160px)] p-6 text-center">
+                <h1 className="text-4xl font-bold">Welcome to Our Learning Platform</h1>
+                <p className="mt-4 text-lg text-muted-foreground">
+                    Your journey to knowledge starts here. Browse our courses or sign in to continue.
+                </p>
+                <div className="mt-8 flex gap-x-4">
+                    <Link href="/search">
+                        <Button size="lg">Browse Courses</Button>
+                    </Link>
+                    <Link href="/sign-in">
+                        <Button size="lg" variant="outline">Login</Button>
+                    </Link>
+                </div>
+            </div>
+        );
     }
 
-    const categories = await db.category.findMany({
-        orderBy: {
-            name: "asc"
-        }
-    });
-
-    const courses = await getCourses({
-        userId,
-        ...searchParams,
-    });
+    // 3. Si l'utilisateur EST connecté, on exécute la logique du tableau de bord.
+    // On appelle notre action pour obtenir les données formatées.
+    const {
+        completedCourses,
+        coursesInProgress
+    } = await getDashboardCourses(userId);
 
     return (
-        <>
-            <div className="px-6 pt-6 md:hidden md:mb-0 block">
-                <SearchInput />
-            </div>
-            <div className="p-6 space-y-4">
-                <Categories
-                    items={categories}
+        <div className="p-6 space-y-4">
+            <h1 className="text-2xl font-bold">My Dashboard</h1>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <InfoCard
+                    icon={Clock}
+                    label="In Progress"
+                    numberOfItems={coursesInProgress.length}
                 />
-                <CoursesList
-                    items={courses}
+                <InfoCard
+                    icon={CheckCircle}
+                    label="Completed"
+                    numberOfItems={completedCourses.length}
+                    variant="success"
                 />
             </div>
-        </>
+            {/* On réutilise le composant CoursesList que nous avons déjà créé ! */}
+            <CoursesList
+                items={[...coursesInProgress, ...completedCourses]}
+            />
+        </div>
     );
 }
-
-export default SearchPage;
